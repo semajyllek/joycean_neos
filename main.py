@@ -47,17 +47,30 @@ def generate_neologism(neo_tags, eng_words):
         r_neo_tags = neo_tags[list(neo_tags.keys())[r_neo]]
  
     gen_neo = []    
-    for tag in r_neo_tags:
-        r_eng = randrange(len(eng_words))
-        r_eng_tag = [tag for (word, tag) in nltk.pos_tag(eng_words[r_eng].split())][0]
-        while(r_eng_tag != tag or eng_words[r_eng][0].isupper()):
-            r_eng = randrange(len(eng_words))
-            r_eng_tag = [tag for (word, tag) in nltk.pos_tag(eng_words[r_eng].split())][0]
-        gen_neo.append(eng_words[r_eng])
+    for i, tag in enumerate(r_neo_tags):
+        neo_part = get_tag_part(eng_words, tag)
+        if i != 0:
+          # if the last part ends in a vowel, the next part should start with a consonant
+          while double_vowels(gen_neo[-1], neo_part):
+            neo_part = get_tag_part(eng_words, tag)
+       
+        gen_neo.append(neo_part)
     
     return ''.join(gen_neo)
 
 
+def double_vowels(first: str, second: str) -> bool:
+  vowels = {'a', 'e', 'i', 'o', 'u'}
+  return (first[-1] in vowels) and (second[0] in vowels)
+
+
+def get_tag_part(eng_words, tag):
+  r_eng = randrange(len(eng_words))
+  r_eng_tag = [tag for (word, tag) in nltk.pos_tag(eng_words[r_eng].split())][0]
+  while(r_eng_tag != tag or eng_words[r_eng][0].isupper()):
+      r_eng = randrange(len(eng_words))
+      r_eng_tag = [tag for (word, tag) in nltk.pos_tag(eng_words[r_eng].split())][0]
+  return eng_words[r_eng]
 
 
 def get_neologism() -> str:
@@ -66,18 +79,21 @@ def get_neologism() -> str:
     return generate_neologism(neo_tags, eng_words)
 
 
+def gen_tweet():
+  neologism = get_neologism()
+  print(f"{neologism=}")
+  client = tweepy.Client(
+    consumer_key=keys.api_key, consumer_secret=keys.api_secret_key,
+    access_token=keys.access_token, access_token_secret=keys.access_secret_token    
+   )
+  
+  client.create_tweet(
+    text=neologism
+  )
 
 
 if __name__ == '__main__':
-   neologism = get_neologism()
-   client = tweepy.Client(
-      consumer_key=keys.api_key, consumer_secret=keys.api_secret_key,
-      access_token=keys.access_token, access_token_secret=keys.access_secret_token    
-   )
-
-   response = client.create_tweet(
-      text=neologism
-   )
+  gen_tweet()
 
 
 
